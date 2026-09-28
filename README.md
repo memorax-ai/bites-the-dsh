@@ -23,7 +23,7 @@ The plugin turns the native conversation into a replay view without opening a se
 - Native composer, model, stop, branch, and assistant write actions are disabled during replay; viewing controls remain interactive.
 - English and Chinese labels using DSH theme tokens, without a separate panel.
 
-The development baseline is DSH `0.1.5-rc.2`; `0.1.6-alpha.2` is also checked. This migration requires the new Conversation/Chat services. Harmony selector drift fails the automated test instead of silently changing the wrong component.
+The development baseline is DSH `0.1.5-rc.2`; `0.1.6-alpha.2` and `0.1.7-rc.2` are also checked. This migration requires the new Conversation/Chat services. Harmony selector drift fails the automated test instead of silently changing the wrong component.
 
 ## Install
 
@@ -78,4 +78,4 @@ token stored in GitHub.
 
 MIT
 
-Compatibility check (2026-09-19): Harmony 0.8.11, 26 unit tests and one built-client integration test pass. All four patches bind on isolated DSH 0.1.5-rc.2 and 0.1.6-alpha.2 Hosts. Historical chat hooks read the projected node store; releasing a Session removes subscriptions, pending history state and read-only mode. Browser interaction and macOS/Linux validation remain separate from these Windows checks.
+Compatibility check (2026-09-28): 26 unit tests match the DSH 0.1.7-rc.2 compiled Conversation/Chat bundles, including all four Harmony selectors. Historical chat hooks read the projected node store; releasing a Session removes subscriptions, pending history state and read-only mode. Browser interaction and macOS/Linux validation remain separate from these Windows checks.

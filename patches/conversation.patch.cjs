@@ -2,7 +2,7 @@ const { component } = require('dsh-harmony-react')
 
 const target = {
   package: '@deepseek-ai/dsh-client-ui-conversation',
-  version: '>=0.1.5-0 <0.1.7-0',
+  version: '>=0.1.5-0 <0.1.8-0',
   file: 'lib/client.js',
 }
 
