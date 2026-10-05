@@ -33,10 +33,16 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/upstream"
           echo '{"private":true}' > "$RUNNER_TEMP/upstream/package.json"
-          # Older runtime dependency trees do not expose every UI package at the root.
-          # Pin each native test dependency so type resolution uses this matrix version.
-          npm install --prefix "$RUNNER_TEMP/upstream" --ignore-scripts --no-audit --no-fund "@deepseek-ai/dsh@$DSH_UPSTREAM_VERSION" $(node -p "Object.keys(require('./package.json').devDependencies).filter(name => name.startsWith('@deepseek-ai/dsh-')).map(name => name + '@' + process.env.DSH_UPSTREAM_VERSION).join(' ')")
+          if [[ "$DSH_UPSTREAM_VERSION" == "0.1.5-rc.2" ]]; then
+            # The baseline types are already installed from our frozen pnpm lock.
+            # Re-resolving its old runtime cohort mixes rc.2 with rc.3 peer packages.
+            npm install --prefix "$RUNNER_TEMP/upstream" --ignore-scripts --no-audit --no-fund "@deepseek-ai/dsh-client-ui-chat@$DSH_UPSTREAM_VERSION" "@deepseek-ai/dsh-client-ui-conversation@$DSH_UPSTREAM_VERSION"
+          else
+            # Older runtime trees do not expose every UI package at the root.
+            npm install --prefix "$RUNNER_TEMP/upstream" --ignore-scripts --no-audit --no-fund "@deepseek-ai/dsh@$DSH_UPSTREAM_VERSION" $(node -p "Object.keys(require('./package.json').devDependencies).filter(name => name.startsWith('@deepseek-ai/dsh-')).map(name => name + '@' + process.env.DSH_UPSTREAM_VERSION).join(' ')")
+          fi
       - run: pnpm check
         env:
           DSH_BITES_UPSTREAM_ROOT: ${{ runner.temp }}/upstream
+          DSH_BITES_TYPECHECK_ROOT: ${{ matrix.dsh == '0.1.5-rc.2' && github.workspace || format('{0}/upstream', runner.temp) }}
       - run: pnpm pack --dry-run
