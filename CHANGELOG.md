@@ -1,3 +1,10 @@
+## Unreleased
+
+- Support DSH `0.2.0-rc.2` explicitly and check its native UI types in CI.
+- Resolve the native assembler after Conversation activation to avoid a browser module cycle.
+- Keep decorators subscribed to the shared playback controller before slot hooks activate.
+- Exclude transient assistant chunks from durable replay state.
+
 ## 0.3.1 — 2026-09-24
 
 - Publish from the `memorax-ai` organization repository with updated package metadata.

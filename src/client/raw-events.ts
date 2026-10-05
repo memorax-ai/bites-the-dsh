@@ -33,12 +33,18 @@ declare module '@deepseek-ai/dsh-client-ui-conversation/client' {
 
 export const EMPTY_PLAYBACK_EVENTS: PlaybackEventSnapshot = Object.freeze({ entries: [] })
 
+function isDurablePlaybackEvent(
+  event: Parameters<ConversationNodeDefinition<PlaybackEntry>['match']>[0],
+): event is SessionEvent {
+  return event.type !== 'assistant/live-chunk'
+}
+
 const rawEventDefinition: ConversationNodeDefinition<PlaybackEntry> = {
   kind: 'session-playback.raw-event',
   target: PLAYBACK_TARGET,
 
   match(event) {
-    if (event.type === 'assistant/live-chunk') return null
+    if (!isDurablePlaybackEvent(event)) return null
     return {
       id: String(event.seq),
       role: 'start',
@@ -46,6 +52,9 @@ const rawEventDefinition: ConversationNodeDefinition<PlaybackEntry> = {
   },
 
   start(_context, match) {
+    if (!isDurablePlaybackEvent(match.event)) {
+      throw new Error('Transient assistant chunks are not playback history')
+    }
     return {
       event: match.event,
       location: match.location,

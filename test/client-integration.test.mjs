@@ -42,6 +42,7 @@ class FakeConversationNodeAssembler {
 
 async function loadClientBundle() {
   let client
+  let nativeConversationReady = false
   let nextFrameId = 1
   const frameCallbacks = new Map()
   globalThis.window = {
@@ -57,6 +58,7 @@ async function loadClientBundle() {
           if (id === 'react') return React
           if (id === 'react/jsx-runtime') return jsxRuntime
           if (id === '@deepseek-ai/dsh-client-ui-conversation/client') {
+            assert.ok(nativeConversationReady, 'decorator loading must not require the native module before its factory completes')
             return { ConversationNodeAssembler: FakeConversationNodeAssembler }
           }
           throw new Error(`Unexpected client dependency: ${id}`)
@@ -70,6 +72,7 @@ async function loadClientBundle() {
     head: { appendChild() {} },
   }
   await import(`../lib/client.js?integration=${Date.now()}`)
+  nativeConversationReady = true
   return {
     client,
     frame(now) {
@@ -150,6 +153,9 @@ test('built client wires native replay, recovery UI, and stable historical proje
     },
   }
   client.apply(ctx)
+  const transient = { type: 'assistant/live-chunk', seq: 2, time: 150, data: {} }
+  assert.equal(rawEventDefinition.match(transient), null)
+  assert.throws(() => rawEventDefinition.start({}, { event: transient }), /not playback history/)
 
   let historyAttempts = 0
   const sourceEntries = [
@@ -278,6 +284,17 @@ test('built client wires native replay, recovery UI, and stable historical proje
   assert.equal(playback.getState('session').cursorSeq, 2)
   await act(async () => playback.pause('session'))
 
+  let inputProps
+  const DecoratedInput = client.decorateInputBar(props => { inputProps = props; return React.createElement('input', { disabled: props.disabled }) })
+  const DecoratedRoot = client.decorateConversationRoot(props => props.children)
+  let input
+  await act(async () => {
+    input = create(React.createElement(DecoratedRoot, { sessionId: 'session' },
+      React.createElement(DecoratedInput, { sessionId: 'session', useInput: selector => selector({}), useConversation: selector => selector(snapshot) })))
+  })
+  assert.equal(inputProps.disabled, true, 'replay remains read-only without a usePlayback slot hook')
+  await act(async () => { input.unmount() })
+
   function ProjectedProbe(props) {
     const value = props.useChat((value) => ({
       nodes: value.legacy.nodes,
@@ -289,7 +306,7 @@ test('built client wires native replay, recovery UI, and stable historical proje
   const useSession = (selector) => selector(snapshot)
   const useConversation = selector => selector(snapshot)
   const useChat = selector => selector(snapshot.chat)
-  const projectionElement = () => React.createElement(DecoratedProbe, { usePlayback, useSession, useConversation, useChat })
+  const projectionElement = () => React.createElement(DecoratedProbe, { sessionId: 'session', useSession, useConversation, useChat })
   let projection
   await act(async () => {
     projection = create(projectionElement())

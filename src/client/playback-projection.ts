@@ -1,7 +1,7 @@
-import {
+import type {
   ConversationNodeAssembler,
-  type UiConversation,
-  type ConversationSnapshot as NativeConversationSnapshot,
+  UiConversation,
+  ConversationSnapshot as NativeConversationSnapshot,
 } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type { ChatSnapshot } from '@deepseek-ai/dsh-client-ui-chat/client'
@@ -14,10 +14,20 @@ import {
   type PlaybackEventSnapshot,
 } from './raw-events.js'
 
-let conversationRuntime: Pick<UiConversation, 'events' | 'views'> | undefined
+declare const require: (name: string) => unknown
+
+let conversationRuntime: (Pick<UiConversation, 'events' | 'views'> & {
+  Assembler: typeof ConversationNodeAssembler
+}) | undefined
 
 export function configurePlaybackProjection(ctx: ClientContext): void {
+  // The native module imports our decorators while its own factory is running.
+  // Resolve its assembler only after uiConversation has activated.
+  const { ConversationNodeAssembler: Assembler } = require(
+    '@deepseek-ai/dsh-client-ui-conversation/client',
+  ) as typeof import('@deepseek-ai/dsh-client-ui-conversation/client')
   conversationRuntime = {
+    Assembler,
     events: ctx.uiConversation.events,
     views: ctx.uiConversation.views,
   }
@@ -53,7 +63,7 @@ export function projectConversationSnapshotAtCursor(
   const inputs = playbackEventsOf(snapshot).entries
     .filter(({ event }) => event.seq <= cursorSeq)
     .map(({ event }) => ({ type: 'event' as const, event }))
-  const assembler = new ConversationNodeAssembler(
+  const assembler = new conversationRuntime.Assembler(
     conversationRuntime.events,
     conversationRuntime.views,
   )

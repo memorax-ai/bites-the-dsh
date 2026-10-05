@@ -29,10 +29,18 @@ type ConversationRootRuntimeProps = ConversationSlotProps & {
 const NO_SESSION_PLAYBACK_KEY = '__bites-the-dsh:no-session__'
 const HistoricalPlaybackContext = createContext(false)
 
+function useSessionPlayback(sessionId: SessionId | undefined): PlaybackState {
+  const store = useMemo(
+    () => playbackController.storeFor(sessionId ?? NO_SESSION_PLAYBACK_KEY),
+    [sessionId],
+  )
+  return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot)
+}
+
 type InputBarRuntimeProps = Record<string, unknown> & {
   disabled?: boolean
+  sessionId?: SessionId
   useInput: MaybeInputHook
-  usePlayback: <Selected>(selector: (state: PlaybackState) => Selected) => Selected | undefined
   useConversation: <Selected>(selector: (state: NativeConversationSnapshot) => Selected) => Selected | undefined
 }
 
@@ -44,15 +52,7 @@ type MessageIconActionsRuntimeProps = Record<string, unknown> & {
 export function decorateConversationRoot(Original: ComponentType<ConversationSlotProps>) {
   return function PlaybackConversationRoot(props: ConversationSlotProps) {
     const { sessionId } = props as ConversationRootRuntimeProps
-    const store = useMemo(
-      () => playbackController.storeFor(sessionId ?? NO_SESSION_PLAYBACK_KEY),
-      [sessionId],
-    )
-    const playback = useSyncExternalStore(
-      store.subscribe,
-      store.getSnapshot,
-      store.getSnapshot,
-    )
+    const playback = useSessionPlayback(sessionId)
     const active = sessionId !== undefined && playback.mode !== 'live'
 
     return <HistoricalPlaybackContext.Provider value={active}>
@@ -69,7 +69,9 @@ export function decorateConversationRoot(Original: ComponentType<ConversationSlo
 export function decorateInputBar(Original: ComponentType<InputBarRuntimeProps>) {
   return function PlaybackInputBar(props: InputBarRuntimeProps) {
     const historical = useContext(HistoricalPlaybackContext)
-    const playback = props.usePlayback((state) => state)
+    // Native slots can render before our standard-props contribution activates.
+    // The decorators share the controller directly throughout that interval.
+    const playback = useSessionPlayback(props.sessionId)
     const entries = props.useConversation((snapshot) => playbackEventsOf(snapshot).entries) ?? []
     const simulatedPreview = useMemo(
       () => historical && playback?.simulateTyping
@@ -108,7 +110,7 @@ export function decorateMessageIconActions(Original: ComponentType<MessageIconAc
 
 export function decorateChatView(Original: ComponentType<ChatViewSlotProps>) {
   return function PlaybackChatView(props: ChatViewSlotProps) {
-    const playback = props.usePlayback((value) => value)
+    const playback = useSessionPlayback(props.sessionId)
     const session = props.useSession((value) => value)
     const conversation = props.useConversation((value) => value)
     const chat = props.useChat((value) => value)

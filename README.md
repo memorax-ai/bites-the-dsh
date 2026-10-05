@@ -25,6 +25,8 @@ The plugin turns the native conversation into a replay view without opening a se
 
 The development baseline is DSH `0.1.5-rc.2`; `0.1.6-alpha.2` and `0.1.7-rc.2` are also checked. This migration requires the new Conversation/Chat services. Harmony selector drift fails the automated test instead of silently changing the wrong component.
 
+DSH `0.2.0-rc.2` is explicitly supported after checking its actual UI types, bundle selectors, browser startup, and combined loading with Turn Fold. The native assembler is resolved after Conversation activation, and decorators observe the shared playback controller even before slot hooks register. Replay behavior is covered by the bundle integration test; a real historical-session browser pass and macOS/Linux browser checks remain separate validation steps.
+
 ## Install
 
 ```sh

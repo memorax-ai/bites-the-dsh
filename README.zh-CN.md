@@ -25,6 +25,8 @@ https://github.com/user-attachments/assets/3c9dfdcf-a454-4750-9edf-76771ed5a9a6
 
 当前开发基线为 DSH `0.1.5-rc.2`，同时检查 `0.1.6-alpha.2` 和 `0.1.7-rc.2`。本次迁移依赖新版 Conversation/Chat 服务。如果 Harmony 选择器发生漂移，自动化测试会直接失败，而不会静默修改错误的组件。
 
+另明确支持 DSH `0.2.0-rc.2`，已检查其实际 UI 类型、bundle 选择器、浏览器启动及与 Turn Fold 的组合加载。原生 assembler 会在 Conversation 激活后解析；组件装饰器在 slot hook 注册前也能订阅共享的回放 controller。回放行为由 bundle 集成测试覆盖；真实历史会话的浏览器检查和 macOS/Linux 浏览器验证仍需另行执行。
+
 ## 安装
 
 ```sh
